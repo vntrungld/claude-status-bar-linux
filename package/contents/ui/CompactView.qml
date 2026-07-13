@@ -71,11 +71,16 @@ MouseArea {
     }
 
     property int elapsed: 0
+    // Sampled 4×/s (not 1×): a 1 s timer beats against the 1 s display quantum,
+    // so Qt jitter walks the sample phase across the second boundary and one
+    // displayed second occasionally stalls to ~2 s. Flooring the *difference*
+    // (vs. difference of floors) keeps the count honest against a float
+    // started_at instead of running up to a second ahead.
     Timer {
-        interval: 1000; repeat: true
+        interval: 250; repeat: true
         running: agg.started_at !== null
         triggeredOnStart: true
-        onTriggered: elapsed = Math.max(0, Math.floor(Date.now()/1000) - agg.started_at)
+        onTriggered: elapsed = Math.max(0, Math.floor(Date.now()/1000 - agg.started_at))
     }
     function fmt(s) {
         var m = Math.floor(s/60); return m > 0 ? (m + "m " + (s%60) + "s") : (s + "s")

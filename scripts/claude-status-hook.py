@@ -33,6 +33,8 @@ def main():
     now = int(time.time())
     doc["session_id"] = sid
     doc["updated_at"] = now
+    # Sub-second start instant so the compact-view elapsed counter isn't
+    # biased up to a full second ahead of real time (see UserPromptSubmit).
     if payload.get("cwd"):
         doc["cwd"] = payload["cwd"]
 
@@ -41,7 +43,7 @@ def main():
     elif event == "UserPromptSubmit":
         doc["state"] = "thinking"
         if not doc.get("started_at"):
-            doc["started_at"] = now
+            doc["started_at"] = time.time()
     elif event == "PreToolUse":
         doc["state"] = "tool"
         doc["tool"] = payload.get("tool_name")
