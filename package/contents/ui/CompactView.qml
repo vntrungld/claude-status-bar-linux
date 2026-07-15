@@ -14,6 +14,9 @@ MouseArea {
     property var usage: ({ status: "loading", five_hour: {}, seven_day: {} })
 
     function toolLabel(t) {
+        // MCP tools are named mcp__<server>__<tool>; collapse them all to one
+        // readable label rather than leaking the raw underscored identifier.
+        if (t && t.indexOf("mcp__") === 0) return "Using MCP"
         switch (t) {
         case "Edit": case "Write": case "MultiEdit": return "Editing"
         case "Bash": return "Running"
@@ -21,6 +24,7 @@ MouseArea {
         case "Grep": case "Glob": return "Searching"
         case "WebFetch": case "WebSearch": return "Browsing"
         case "Task": return "Delegating"
+        case "AskUserQuestion": return "Awaiting you"
         default: return t || ""
         }
     }
@@ -31,6 +35,9 @@ MouseArea {
         if (state === "waiting") return "notification"
         if (state === "thinking") return "thinking"
         if (state === "tool") {
+            // AskUserQuestion is a request for the human — show the notification
+            // Clawd (same as the "waiting" state) so it reads as "your turn".
+            if (tool === "AskUserQuestion") return "notification"
             switch (tool) {
             case "Edit": case "Write": case "MultiEdit": return "typing"
             case "Bash": return "building"

@@ -23,6 +23,14 @@ Item {
     // Ask the applet root to re-fetch usage now (wired in main.qml).
     signal refreshRequested()
 
+    // Human-readable label for a tool name (mirrors CompactView.toolLabel):
+    // MCP tools collapse to one label; AskUserQuestion reads as "your turn".
+    function toolLabel(t) {
+        if (t && t.indexOf("mcp__") === 0) return "Using MCP"
+        if (t === "AskUserQuestion") return "Awaiting you"
+        return t || ""
+    }
+
     // "last updated" hint; nowSec ticks so it stays roughly current.
     property int nowSec: Math.floor(Date.now() / 1000)
     Timer { interval: 30000; repeat: true; running: true; onTriggered: fullRoot.nowSec = Math.floor(Date.now() / 1000) }
@@ -53,7 +61,7 @@ Item {
                 }
                 Item { Layout.fillWidth: true }
                 PlasmaComponents.Label {
-                    text: modelData.state + (modelData.tool ? " · " + modelData.tool : "")
+                    text: modelData.state + (modelData.tool ? " · " + fullRoot.toolLabel(modelData.tool) : "")
                           + (modelData.state === "idle" ? "" : "…")
                     opacity: 0.8
                 }
