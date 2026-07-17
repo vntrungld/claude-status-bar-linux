@@ -7,7 +7,7 @@
         "Icon": "utilities-terminal",
         "Category": "System Information",
         "License": "MIT",
-        "Version": "0.1.1",
+        "Version": "0.1.2",
         "Authors": [{ "Name": "trungld" }]
     },
     "X-Plasma-API-Minimum-Version": "6.0"

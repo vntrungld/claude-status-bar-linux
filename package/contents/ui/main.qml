@@ -10,7 +10,7 @@ PlasmoidItem {
     readonly property string binDir:
         "${XDG_DATA_HOME:-$HOME/.local/share}/claude-status-bar/bin"
     readonly property string aggCmd: "python3 " + binDir + "/claude-status-aggregate.py"
-    readonly property string usageCmd: "python3 " + binDir + "/cux-usage-fetch.py"
+    readonly property string usageCmd: "python3 " + binDir + "/token-slayer-usage-fetch.py"
 
     property var agg: ({ state: "idle", tool: null, started_at: null,
                          active_count: 0, waiting_count: 0, sessions: [] })
@@ -26,6 +26,19 @@ PlasmoidItem {
         root.usageRetryCount = 0
         root.usageFetching = true
         usageSrc.run(root.usageCmd)
+    }
+
+    // Switch the active token-slayer account, then re-list. The fetch script
+    // prints the refreshed multi-account result, so usageSrc.onNewData updates
+    // root.usage exactly as a normal refresh would. `target` is an account name
+    // (email) from token-slayer; single-quote it so the shell passes it intact.
+    function switchAccount(target) {
+        if (!target)
+            return
+        root.usageRetryCount = 0
+        root.usageFetching = true
+        var safe = String(target).replace(/'/g, "'\\''")
+        usageSrc.run(root.usageCmd + " switch '" + safe + "'")
     }
 
     // Executable engine runs the command through /bin/sh, so the ${XDG...}
@@ -96,5 +109,6 @@ PlasmoidItem {
         usage: root.usage
         usageFetching: root.usageFetching
         onRefreshRequested: root.refreshUsage()
+        onSwitchRequested: (target) => root.switchAccount(target)
     }
 }

@@ -23,6 +23,10 @@ Item {
     // Ask the applet root to re-fetch usage now (wired in main.qml).
     signal refreshRequested()
 
+    // Ask the applet root to switch the active account to `target` (an account
+    // name/email); the root runs token-slayer and refreshes usage.
+    signal switchRequested(string target)
+
     // Human-readable label for a tool name (mirrors CompactView.toolLabel):
     // MCP tools collapse to one label; AskUserQuestion reads as "your turn".
     function toolLabel(t) {
@@ -74,8 +78,8 @@ Item {
             opacity: 0.6
         }
 
-        // Push usage to the bottom in single-account mode; in cux mode the
-        // account list takes the space (and scrolls) instead.
+        // Push usage to the bottom in single-account mode; in multi-account
+        // (token-slayer) mode the account list takes the space (and scrolls).
         Item { Layout.fillHeight: fullRoot.usage.multi !== true }
 
         Kirigami.Separator { Layout.fillWidth: true }
@@ -111,13 +115,14 @@ Item {
                 }
             }
         }
-        // Single-account (no cux): unchanged.
+        // Single-account (no token-slayer): unchanged.
         UsageBars {
             visible: fullRoot.usage.multi !== true
             usage: fullRoot.usage
             Layout.fillWidth: true
         }
-        // Multi-account (cux): one block per managed account; scrolls if tall.
+        // Multi-account (token-slayer): one block per managed account, each with
+        // a switch button; scrolls if tall.
         QQC2.ScrollView {
             id: acctScroll
             visible: fullRoot.usage.multi === true
@@ -129,7 +134,12 @@ Item {
                 spacing: Kirigami.Units.largeSpacing
                 Repeater {
                     model: fullRoot.usage.accounts || []
-                    UsageAccount { account: modelData; Layout.fillWidth: true }
+                    UsageAccount {
+                        account: modelData
+                        busy: fullRoot.usageFetching
+                        Layout.fillWidth: true
+                        onSwitchRequested: (target) => fullRoot.switchRequested(target)
+                    }
                 }
             }
         }

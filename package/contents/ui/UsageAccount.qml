@@ -1,13 +1,22 @@
 import QtQuick
+import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.kirigami as Kirigami
 
-// One managed account: a header (name · email, active chip, freshness) above
-// the reused UsageBars. Rendered per-account by FullView in cux mode.
+// One managed account: a header (name · email, active chip, freshness, and a
+// switch button for inactive accounts) above the reused UsageBars. Rendered
+// per-account by FullView in token-slayer (multi-account) mode.
 ColumnLayout {
     id: acct
     property var account: ({})
+    // True while a usage fetch/switch is in flight; disables the switch button
+    // so a second switch can't be fired before the first result lands.
+    property bool busy: false
+
+    // Ask FullView (→ applet root) to make this account active.
+    signal switchRequested(string target)
+
     Layout.fillWidth: true
     spacing: 2
 
@@ -55,6 +64,18 @@ ColumnLayout {
             visible: text !== ""
             opacity: 0.6
             font: Kirigami.Theme.smallFont
+        }
+        // Switch to this account (hidden for the already-active one).
+        PlasmaComponents.ToolButton {
+            visible: acct.account.active !== true && !!acct.account.name
+            enabled: !acct.busy
+            icon.name: "system-switch-user"
+            text: i18n("Switch")
+            display: QQC2.AbstractButton.TextBesideIcon
+            font: Kirigami.Theme.smallFont
+            onClicked: acct.switchRequested(acct.account.name)
+            QQC2.ToolTip.visible: hovered
+            QQC2.ToolTip.text: i18n("Switch to %1", acct.displayName())
         }
     }
 
