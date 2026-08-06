@@ -229,8 +229,10 @@ Tests cover the hook, aggregate, usage-fetch, path, and settings-merge logic.
 
 ## Credits
 
-The animated Clawd crab artwork (`package/contents/icons/clawd/*.webp`) is
+The animated Clawd crab artwork (source WebPs in `assets/clawd-src/`) is
 derived from [clawd-tank](https://github.com/marciogranzotto/clawd-tank) by
 Marcio Granzotto, used under the MIT License (see
-`package/contents/icons/clawd/LICENSE.clawd-tank`). The SVG animations were
-rendered to animated WebP for use in the plasmoid.
+`assets/clawd-src/LICENSE.clawd-tank`). The SVG animations were rendered to
+animated WebP, then converted to the PNG sprite sheets shipped at
+`shared/clawd/` (same licence, carried alongside as
+`shared/clawd/LICENSE.clawd-tank`) for use by both frontends.

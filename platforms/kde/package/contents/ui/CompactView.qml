@@ -35,8 +35,17 @@ MouseArea {
     // Frame counts differ per animation, so AnimatedSprite needs the right
     // frameCount for whichever sheet is showing.
     readonly property string clawdName: Labels.clawdAnim(agg.state, agg.tool)
-    readonly property var clawdInfo:
-        Frames.FRAMES[clawdName] || ({ frames: 1, width: 128, height: 128, interval_ms: 83 })
+    // The fallback only guards a name mismatch between labels.mjs and the
+    // generated sheets (a missing module import would throw on the
+    // subscript below, not fall through to `||`). Warn loudly: a silent
+    // fallback here is exactly the frozen-crab symptom of the file://-XHR
+    // bug this replaced, and it would be just as untraceable next time.
+    readonly property var clawdInfo: {
+        var m = Frames.FRAMES[clawdName]
+        if (!m)
+            console.warn("claude-status-bar: no sprite metadata for", clawdName)
+        return m || ({ frames: 1, width: 128, height: 128, interval_ms: 83 })
+    }
 
     property int elapsed: 0
     // Sampled 4×/s (not 1×): a 1 s timer beats against the 1 s display quantum,
@@ -71,6 +80,10 @@ MouseArea {
             smooth: true
             running: true
             loops: AnimatedSprite.Infinite
+            // Discrete frame steps, no cross-fade: GNOME blits a clip rect
+            // per frame with no blending, so interpolating here would make
+            // KDE visibly smeared relative to GNOME on the same sheets.
+            interpolate: false
             // Animated Clawd chosen by activity state / current tool, played
             // from the shared sprite sheets so GNOME renders the same frames.
             source: Qt.resolvedUrl("../shared/clawd/" + compact.clawdName + ".png")

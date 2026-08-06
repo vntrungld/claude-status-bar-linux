@@ -1,6 +1,7 @@
 import { eq, ok } from './harness.mjs'
 import { toolLabel, toolLabelShort, clawdAnim, THINKING_WORDS,
          pickThinkingWord, fmt, displayName } from '../../shared/labels.mjs'
+import { FRAMES } from '../../shared/clawd/frames.mjs'
 
 eq(toolLabel('Edit'), 'Editing', 'Edit maps to Editing')
 eq(toolLabel('Write'), 'Editing', 'Write maps to Editing')
@@ -35,6 +36,25 @@ eq(clawdAnim('tool', 'Grep'), 'debugger', 'Grep uses debugger')
 eq(clawdAnim('tool', 'Glob'), 'debugger', 'Glob uses debugger')
 eq(clawdAnim('tool', 'Read'), 'carrying', 'Read uses carrying')
 eq(clawdAnim('tool', 'Whatever'), 'typing', 'unknown tool falls back to typing')
+
+// Join test: every animation name clawdAnim() can emit must have a
+// FRAMES entry with a positive integer frame count. A mapping added here
+// without a matching generated sheet would otherwise pass all other
+// assertions and ship a frozen crab (the exact class of bug the sprite
+// metadata fix addressed).
+const clawdCases = [
+    ['waiting', null], ['thinking', null], ['idle', null],
+    ['tool', 'AskUserQuestion'], ['tool', 'Edit'], ['tool', 'Write'],
+    ['tool', 'MultiEdit'], ['tool', 'Bash'], ['tool', 'Grep'],
+    ['tool', 'Glob'], ['tool', 'Read'], ['tool', 'Whatever']
+]
+for (const [state, tool] of clawdCases) {
+    const name = clawdAnim(state, tool)
+    const meta = FRAMES[name]
+    ok(!!meta, `FRAMES has an entry for '${name}' (clawdAnim(${state}, ${tool}))`)
+    ok(meta && Number.isInteger(meta.frames) && meta.frames > 0,
+       `FRAMES['${name}'].frames is a positive integer`)
+}
 
 ok(THINKING_WORDS.length > 1, 'there is more than one thinking word')
 ok(THINKING_WORDS.indexOf('Brewing') === 0, 'Brewing is first')
