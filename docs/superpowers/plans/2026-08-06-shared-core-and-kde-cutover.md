@@ -924,8 +924,10 @@ if ! command -v qml6 >/dev/null 2>&1; then
     exit 127
 fi
 
-QT_QPA_PLATFORM=offscreen qml6 "$HERE/qml/shared-smoke.qml"
-code=$?
+# `|| code=$?` is required: under `set -e` a bare failing command aborts the
+# script before the exit code can be captured, losing the diagnostic below.
+code=0
+QT_QPA_PLATFORM=offscreen qml6 "$HERE/qml/shared-smoke.qml" || code=$?
 if [ "$code" -eq 0 ]; then
     echo "QML shared-module smoke test passed"
 else
