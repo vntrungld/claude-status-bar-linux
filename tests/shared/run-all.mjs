@@ -2,6 +2,7 @@
 import { report } from './harness.mjs'
 import './test-aggregate.mjs'
 import './test-labels.mjs'
+import './test-usage.mjs'
 
 const failures = report()
 
