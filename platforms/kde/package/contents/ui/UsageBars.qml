@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.kirigami as Kirigami
+import "../shared/usage.mjs" as Usage
 
 ColumnLayout {
     id: bars
@@ -9,25 +10,21 @@ ColumnLayout {
     spacing: 4
 
     property var usage: ({ status: "loading", five_hour: {}, seven_day: {} })
-    function pct(w) { return (w && w.utilization !== undefined) ? Math.round(w.utilization) : null }
 
     // Ticks so the "resets in …" countdown stays roughly current without a re-fetch.
     property int nowSec: Math.floor(Date.now() / 1000)
     Timer { interval: 30000; repeat: true; running: true; onTriggered: bars.nowSec = Math.floor(Date.now() / 1000) }
 
-    // Relative time until the window's limit resets, from its ISO `resets_at`.
-    function resetText(w) {
-        if (!w || !w.resets_at) return ""
-        var t = Date.parse(w.resets_at)
-        if (isNaN(t)) return ""
-        var d = Math.floor(t / 1000) - nowSec
-        if (d <= 0) return i18n("resetting…")
-        var days = Math.floor(d / 86400)
-        var hours = Math.floor((d % 86400) / 3600)
-        var mins = Math.floor((d % 3600) / 60)
-        if (days > 0) return i18n("resets in %1d %2h", days, hours)
-        if (hours > 0) return i18n("resets in %1h %2m", hours, mins)
-        return i18n("resets in %1m", mins)
+    // Shared helpers return {id, args}; each frontend owns its own wording.
+    function msg(m) {
+        if (!m) return ""
+        switch (m.id) {
+        case "resetting":    return i18n("resetting…")
+        case "resets_in_dh": return i18n("resets in %1d %2h", m.args[0], m.args[1])
+        case "resets_in_hm": return i18n("resets in %1h %2m", m.args[0], m.args[1])
+        case "resets_in_m":  return i18n("resets in %1m", m.args[0])
+        }
+        return ""
     }
 
     PlasmaComponents.Label {
@@ -44,18 +41,18 @@ ColumnLayout {
         ColumnLayout {
             Layout.fillWidth: true
             spacing: 0
-            visible: pct(modelData.w) !== null
+            visible: Usage.usagePct(modelData.w) !== null
             RowLayout {
                 Layout.fillWidth: true
                 PlasmaComponents.Label { text: modelData.label; Layout.preferredWidth: 70 }
                 PlasmaComponents.ProgressBar {
                     Layout.fillWidth: true
-                    from: 0; to: 100; value: pct(modelData.w) || 0
+                    from: 0; to: 100; value: Usage.usagePct(modelData.w) || 0
                 }
-                PlasmaComponents.Label { text: (pct(modelData.w) || 0) + "%" }
+                PlasmaComponents.Label { text: (Usage.usagePct(modelData.w) || 0) + "%" }
             }
             PlasmaComponents.Label {
-                text: resetText(modelData.w)
+                text: bars.msg(Usage.resetText(modelData.w, bars.nowSec))
                 visible: text !== ""
                 opacity: 0.6
                 font: Kirigami.Theme.smallFont

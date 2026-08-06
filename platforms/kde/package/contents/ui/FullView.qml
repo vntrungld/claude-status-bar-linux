@@ -3,6 +3,8 @@ import QtQuick.Controls as QQC2
 import QtQuick.Layouts
 import org.kde.plasma.components as PlasmaComponents
 import org.kde.kirigami as Kirigami
+import "../shared/labels.mjs" as Labels
+import "../shared/usage.mjs" as Usage
 
 // Root is an Item with explicit preferred size — Plasma sizes the popup from
 // these hints. A bare Layout root without preferredWidth/Height collapses the
@@ -27,23 +29,19 @@ Item {
     // name/email); the root runs token-slayer and refreshes usage.
     signal switchRequested(string target)
 
-    // Human-readable label for a tool name (mirrors CompactView.toolLabel):
-    // MCP tools collapse to one label; AskUserQuestion reads as "your turn".
-    function toolLabel(t) {
-        if (t && t.indexOf("mcp__") === 0) return "Using MCP"
-        if (t === "AskUserQuestion") return "Awaiting you"
-        return t || ""
-    }
-
     // "last updated" hint; nowSec ticks so it stays roughly current.
     property int nowSec: Math.floor(Date.now() / 1000)
     Timer { interval: 30000; repeat: true; running: true; onTriggered: fullRoot.nowSec = Math.floor(Date.now() / 1000) }
-    function updatedText(fetchedAt) {
-        if (!fetchedAt) return ""
-        var d = Math.max(0, fullRoot.nowSec - fetchedAt)
-        if (d < 60) return i18n("updated just now")
-        if (d < 3600) return i18n("updated %1m ago", Math.floor(d / 60))
-        return i18n("updated %1h ago", Math.floor(d / 3600))
+
+    // Shared helpers return {id, args}; each frontend owns its own wording.
+    function msg(m) {
+        if (!m) return ""
+        switch (m.id) {
+        case "updated_now": return i18n("updated just now")
+        case "updated_m":   return i18n("updated %1m ago", m.args[0])
+        case "updated_h":   return i18n("updated %1h ago", m.args[0])
+        }
+        return ""
     }
 
     ColumnLayout {
@@ -65,7 +63,7 @@ Item {
                 }
                 Item { Layout.fillWidth: true }
                 PlasmaComponents.Label {
-                    text: modelData.state + (modelData.tool ? " · " + fullRoot.toolLabel(modelData.tool) : "")
+                    text: modelData.state + (modelData.tool ? " · " + Labels.toolLabelShort(modelData.tool) : "")
                           + (modelData.state === "idle" ? "" : "…")
                     opacity: 0.8
                 }
@@ -88,7 +86,7 @@ Item {
             spacing: Kirigami.Units.smallSpacing
             PlasmaComponents.Label { text: i18n("Usage limits"); font.bold: true }
             PlasmaComponents.Label {
-                text: fullRoot.updatedText(fullRoot.usage.fetched_at)
+                text: fullRoot.msg(Usage.updatedText(fullRoot.usage.fetched_at, fullRoot.nowSec))
                 visible: text !== "" && fullRoot.usage.multi !== true
                 opacity: 0.6
                 font: Kirigami.Theme.smallFont
