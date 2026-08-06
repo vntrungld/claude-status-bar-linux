@@ -2,6 +2,7 @@ import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
 import "../shared/aggregate.mjs" as Aggregate
+import "../shared/usage.mjs" as Usage
 
 PlasmoidItem {
     id: root
@@ -84,7 +85,7 @@ PlasmoidItem {
     // triggeredOnStart makes login/boot fetch immediately.
     Timer {
         id: usageTimer
-        interval: 300000; repeat: true; running: true
+        interval: Usage.POLL_INTERVAL_MS; repeat: true; running: true
         triggeredOnStart: true
         onTriggered: root.refreshUsage()
     }
@@ -95,9 +96,9 @@ PlasmoidItem {
     // Skips reauth/rate_limited, where a fast retry can't help or must back off.
     Timer {
         id: usageRetryTimer
-        interval: 10000; repeat: true
-        running: (root.usage.status === "loading" || root.usage.status === "error")
-                 && root.usageRetryCount < 18
+        interval: Usage.RETRY_INTERVAL_MS; repeat: true
+        running: Usage.shouldFastRetry(root.usage.status)
+                 && root.usageRetryCount < Usage.MAX_RETRIES
         onTriggered: {
             root.usageRetryCount += 1
             root.usageFetching = true

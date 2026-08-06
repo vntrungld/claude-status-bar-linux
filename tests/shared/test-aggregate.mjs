@@ -25,6 +25,7 @@ ok(out.state === 'thinking' && out.started_at === 600, 'thinking uses earliest s
 
 out = aggregate([d('a', 'tool', 100, 1, 'Edit')], 100000)
 ok(out.state === 'idle' && out.active_count === 0, 'stale non-idle dropped')
+eq(out.sessions.length, 0, 'stale non-idle session is not rendered')
 
 out = aggregate([d('a', 'tool', null, 'garbage', 'Edit')], 100000)
 ok(out.state === 'idle' && out.active_count === 0, 'malformed updated_at does not crash')
