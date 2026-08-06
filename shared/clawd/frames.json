@@ -1,0 +1,44 @@
+{
+  "building": {
+    "frames": 14,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "carrying": {
+    "frames": 13,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "debugger": {
+    "frames": 14,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "idle": {
+    "frames": 14,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "notification": {
+    "frames": 12,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "thinking": {
+    "frames": 14,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  },
+  "typing": {
+    "frames": 14,
+    "height": 128,
+    "interval_ms": 83,
+    "width": 128
+  }
+}

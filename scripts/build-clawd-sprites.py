@@ -1,0 +1,60 @@
+#!/usr/bin/env python3
+"""Convert the animated Clawd WebPs into horizontal PNG sprite sheets.
+
+Maintainer tool — NOT installed, and the only script allowed to need Pillow.
+Its output is committed, so installing needs no image libraries.
+
+GNOME cannot decode animated WebP without the non-default webp-pixbuf-loader
+package, and the source files carry no per-frame duration metadata (QML's
+AnimatedImage has been falling back to its own default). Sheets fix both: one
+asset format both toolkits read, and an explicit, identical frame rate.
+
+Usage: python3 scripts/build-clawd-sprites.py
+"""
+import json, os, sys
+
+try:
+    from PIL import Image
+except ImportError:
+    sys.exit("error: Pillow is required (pip install --user Pillow)")
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+SRC = os.path.join(HERE, "..", "platforms", "kde", "package", "contents", "icons", "clawd")
+OUT = os.path.join(HERE, "..", "shared", "clawd")
+
+# The source art has no frame durations. 12fps matches the original clawd-tank
+# SVG animations and reads correctly at panel size; change here to retune both
+# frontends at once.
+INTERVAL_MS = 83
+
+
+def build(name, path):
+    im = Image.open(path)
+    n = getattr(im, "n_frames", 1)
+    w, h = im.size
+    sheet = Image.new("RGBA", (w * n, h), (0, 0, 0, 0))
+    for i in range(n):
+        im.seek(i)
+        sheet.paste(im.convert("RGBA"), (i * w, 0))
+    sheet.save(os.path.join(OUT, name + ".png"), optimize=True)
+    return {"frames": n, "width": w, "height": h, "interval_ms": INTERVAL_MS}
+
+
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    meta = {}
+    for f in sorted(os.listdir(SRC)):
+        if not f.endswith(".webp"):
+            continue
+        name = f[:-len(".webp")]
+        meta[name] = build(name, os.path.join(SRC, f))
+        print(f"{name}: {meta[name]['frames']} frames "
+              f"{meta[name]['width']}x{meta[name]['height']}")
+    with open(os.path.join(OUT, "frames.json"), "w") as fh:
+        json.dump(meta, fh, indent=2, sort_keys=True)
+        fh.write("\n")
+    print(f"wrote {len(meta)} sheets + frames.json to {OUT}")
+
+
+if __name__ == "__main__":
+    main()
