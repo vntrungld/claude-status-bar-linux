@@ -1,6 +1,7 @@
 import QtQuick
 import org.kde.plasma.plasmoid
 import org.kde.plasma.plasma5support as Plasma5Support
+import "../shared/aggregate.mjs" as Aggregate
 
 PlasmoidItem {
     id: root
@@ -9,7 +10,7 @@ PlasmoidItem {
     // the shell wrapper below expands it at runtime).
     readonly property string binDir:
         "${XDG_DATA_HOME:-$HOME/.local/share}/claude-status-bar/bin"
-    readonly property string aggCmd: "python3 " + binDir + "/claude-status-aggregate.py"
+    readonly property string aggCmd: "python3 " + binDir + "/claude-status-sessions.py"
     readonly property string usageCmd: "python3 " + binDir + "/token-slayer-usage-fetch.py"
 
     property var agg: ({ state: "idle", tool: null, started_at: null,
@@ -49,7 +50,12 @@ PlasmoidItem {
         connectedSources: []
         onNewData: (source, data) => {
             disconnectSource(source)  // allow the same command to re-run next tick
-            try { root.agg = JSON.parse((data["stdout"] || "").trim()) }
+            try {
+                // The script prints raw session documents; the merge rules live
+                // in the shared core so GNOME applies exactly the same ones.
+                var docs = JSON.parse((data["stdout"] || "").trim())
+                root.agg = Aggregate.aggregate(docs, Date.now() / 1000)
+            }
             catch (e) { /* keep previous value */ }
         }
         function run(cmd) { connectSource(cmd) }
