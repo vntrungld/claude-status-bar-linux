@@ -122,7 +122,7 @@ filesystem, builds a widget, or stores a preference is per-platform.**
 - `shimmerOpacity(index, head)` — the existing `0.4 + 0.6 · max(0, 1 - |i-head|/2.4)` curve.
 - `shimmerDuration(n)` — `max(700, n · 130)` ms.
 
-`shared/clawd/` — generated sprite sheets plus `frames.json`.
+`shared/clawd/` — generated sprite sheets plus `frames.mjs`.
 
 Time is always passed in as a parameter. No shared module reads the clock, which
 keeps every function testable without mocking.
@@ -222,7 +222,7 @@ UUID `claude-status-bar@vntrungld.github.io`.
 
 `scripts/build-clawd-sprites.py` (Pillow) converts each of the seven animated
 WebPs — 128×128, 12–14 frames — into a horizontal PNG sprite sheet plus a
-`frames.json` recording frame count and playback interval per animation.
+`frames.mjs` (an ES module both engines import) recording frame count and playback interval per animation.
 
 **The generated sheets are committed.** The script is a maintainer tool, re-run
 only when the source art changes; installing requires no Pillow.

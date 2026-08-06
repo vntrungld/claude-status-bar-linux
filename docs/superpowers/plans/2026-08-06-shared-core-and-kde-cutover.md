@@ -1595,6 +1595,14 @@ toolLabelShort, so session rows read exactly as they did before."
 - Consumes: `platforms/kde/package/contents/icons/clawd/*.webp` (source art)
 - Produces: one horizontal sprite sheet per animation at `shared/clawd/<name>.png`, plus `shared/clawd/frames.json` mapping each name to `{frames, width, height, interval_ms}`. Consumed by Task 12 and by the GNOME plan.
 
+> **Amendment (superseded during execution):** the metadata ships as
+> `shared/clawd/frames.mjs` exporting `FRAMES`, not as `frames.json`. Qt 6 blocks
+> synchronous `file://` XHR unless `QML_XHR_ALLOW_FILE_READ=1`, which plasmashell
+> does not set — so the JSON was never readable from the widget and every
+> animation would have frozen at one frame. An ES-module import needs no
+> filesystem permission and works in both engines. See commit `98dfbf4`. The
+> steps below still say `frames.json`; read them as `frames.mjs`.
+
 - [ ] **Step 1: Write the build script**
 
 Create `scripts/build-clawd-sprites.py`:
@@ -1730,6 +1738,16 @@ The last KDE change. `AnimatedSprite` consumes the shared sheets, so both fronte
 **Interfaces:**
 - Consumes: `shared/clawd/frames.json` and the sheets from Task 11
 - Produces: the finished KDE frontend on the shared core.
+
+> **Amendment (superseded during execution):** Step 2's `XMLHttpRequest` read of
+> `frames.json` does not work — Qt 6 blocks synchronous `file://` XHR unless
+> `QML_XHR_ALLOW_FILE_READ=1`, which plasmashell does not set, so `clawdMeta`
+> stayed empty and every animation fell back to `frameCount: 1` (a frozen crab).
+> The shipped code instead does `import "../shared/clawd/frames.mjs" as Frames`
+> and reads `Frames.FRAMES[clawdName]`. The `AnimatedSprite` block also sets
+> `interpolate: false`: Qt cross-fades between frames by default, where the
+> `AnimatedImage` it replaced stepped discretely and the GNOME frontend blits one
+> clip rect per frame. See commits `98dfbf4` and the round-2 fix.
 
 - [ ] **Step 1: Preserve the source art outside the shipped package**
 
