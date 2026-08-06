@@ -5,6 +5,7 @@ import org.kde.plasma.plasmoid
 import "../shared/labels.mjs" as Labels
 import "../shared/usage.mjs" as Usage
 import "../shared/shimmer.mjs" as Shimmer
+import "../shared/clawd/frames.mjs" as Frames
 
 MouseArea {
     id: compact
@@ -28,19 +29,14 @@ MouseArea {
         prevState = s
     }
 
-    // Sprite sheet metadata, loaded once. Frame counts differ per animation, so
-    // AnimatedSprite needs the right frameCount for whichever sheet is showing.
-    property var clawdMeta: ({})
-    Component.onCompleted: {
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", Qt.resolvedUrl("../shared/clawd/frames.json"), false)
-        xhr.send()
-        if (xhr.status === 200 || xhr.status === 0)
-            compact.clawdMeta = JSON.parse(xhr.responseText)
-    }
+    // Sprite sheet metadata, imported as an ES module (not read via
+    // file:// XMLHttpRequest, which Qt 6 blocks unless
+    // QML_XHR_ALLOW_FILE_READ=1 is set — plasmashell does not set it).
+    // Frame counts differ per animation, so AnimatedSprite needs the right
+    // frameCount for whichever sheet is showing.
     readonly property string clawdName: Labels.clawdAnim(agg.state, agg.tool)
     readonly property var clawdInfo:
-        clawdMeta[clawdName] || ({ frames: 1, width: 128, height: 128, interval_ms: 83 })
+        Frames.FRAMES[clawdName] || ({ frames: 1, width: 128, height: 128, interval_ms: 83 })
 
     property int elapsed: 0
     // Sampled 4×/s (not 1×): a 1 s timer beats against the 1 s display quantum,

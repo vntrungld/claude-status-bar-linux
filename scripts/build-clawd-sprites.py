@@ -11,7 +11,7 @@ asset format both toolkits read, and an explicit, identical frame rate.
 
 Usage: python3 scripts/build-clawd-sprites.py
 """
-import json, os, sys
+import os, sys
 
 try:
     from PIL import Image
@@ -40,6 +40,26 @@ def build(name, path):
     return {"frames": n, "width": w, "height": h, "interval_ms": INTERVAL_MS}
 
 
+def write_frames_mjs(meta, path):
+    """Emit shared/clawd/frames.mjs deterministically: sorted animation
+    names, stable per-entry key order, so re-running this script is
+    byte-identical. Consumed via `import ... from "frames.mjs"` — an ES
+    module import, unlike a file:// XMLHttpRequest, needs no special Qt
+    QML engine permission and works identically under plasmashell.
+    """
+    lines = ["export const FRAMES = {"]
+    for name in sorted(meta):
+        m = meta[name]
+        lines.append(
+            '  "%s": { "frames": %d, "width": %d, "height": %d, '
+            '"interval_ms": %d },'
+            % (name, m["frames"], m["width"], m["height"], m["interval_ms"])
+        )
+    lines.append("};")
+    with open(path, "w") as fh:
+        fh.write("\n".join(lines) + "\n")
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     meta = {}
@@ -50,10 +70,8 @@ def main():
         meta[name] = build(name, os.path.join(SRC, f))
         print(f"{name}: {meta[name]['frames']} frames "
               f"{meta[name]['width']}x{meta[name]['height']}")
-    with open(os.path.join(OUT, "frames.json"), "w") as fh:
-        json.dump(meta, fh, indent=2, sort_keys=True)
-        fh.write("\n")
-    print(f"wrote {len(meta)} sheets + frames.json to {OUT}")
+    write_frames_mjs(meta, os.path.join(OUT, "frames.mjs"))
+    print(f"wrote {len(meta)} sheets + frames.mjs to {OUT}")
 
 
 if __name__ == "__main__":
