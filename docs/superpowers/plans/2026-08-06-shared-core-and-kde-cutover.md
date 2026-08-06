@@ -1542,8 +1542,11 @@ Expected: no matches. Only the `msg` renderers and view-specific helpers remain.
 
 ```bash
 ./tests/run-qml-tests.sh
+# Qt 6's qml tool has no --quit flag; these files cannot fully instantiate
+# outside a Plasma panel, so cap each run and grep only for load/parse errors.
 for f in platforms/kde/package/contents/ui/*.qml; do
-  QT_QPA_PLATFORM=offscreen qml6 --quit "$f" 2>&1 | grep -iE "syntax|is not a type|cannot load|\.mjs" && echo "PROBLEM in $f"
+  timeout 10 env QT_QPA_PLATFORM=offscreen qml6 "$f" 2>&1 \
+    | grep -iE "syntax error|is not a type|cannot load|\.mjs" && echo "PROBLEM in $f"
 done
 echo "parse sweep done"
 ```
