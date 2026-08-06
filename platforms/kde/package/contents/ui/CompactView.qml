@@ -28,6 +28,20 @@ MouseArea {
         prevState = s
     }
 
+    // Sprite sheet metadata, loaded once. Frame counts differ per animation, so
+    // AnimatedSprite needs the right frameCount for whichever sheet is showing.
+    property var clawdMeta: ({})
+    Component.onCompleted: {
+        var xhr = new XMLHttpRequest()
+        xhr.open("GET", Qt.resolvedUrl("../shared/clawd/frames.json"), false)
+        xhr.send()
+        if (xhr.status === 200 || xhr.status === 0)
+            compact.clawdMeta = JSON.parse(xhr.responseText)
+    }
+    readonly property string clawdName: Labels.clawdAnim(agg.state, agg.tool)
+    readonly property var clawdInfo:
+        clawdMeta[clawdName] || ({ frames: 1, width: 128, height: 128, interval_ms: 83 })
+
     property int elapsed: 0
     // Sampled 4×/s (not 1×): a 1 s timer beats against the 1 s display quantum,
     // so Qt jitter walks the sample phase across the second boundary and one
@@ -49,19 +63,25 @@ MouseArea {
         id: row
         anchors.fill: parent
         spacing: 4
-        AnimatedImage {
+        AnimatedSprite {
             id: clawd
             Layout.alignment: Qt.AlignVCenter
             // Square, sized to panel thickness (compact.height is set by the
             // panel, so this does not feed back into the row's implicit width).
             Layout.preferredHeight: Math.max(16, compact.height)
             Layout.preferredWidth: Layout.preferredHeight
-            fillMode: Image.PreserveAspectFit
+            width: Layout.preferredWidth
+            height: Layout.preferredHeight
             smooth: true
-            cache: false
-            playing: true
-            // Animated Clawd (WebP) chosen by activity state / current tool.
-            source: Qt.resolvedUrl("../icons/clawd/" + Labels.clawdAnim(agg.state, agg.tool) + ".webp")
+            running: true
+            loops: AnimatedSprite.Infinite
+            // Animated Clawd chosen by activity state / current tool, played
+            // from the shared sprite sheets so GNOME renders the same frames.
+            source: Qt.resolvedUrl("../shared/clawd/" + compact.clawdName + ".png")
+            frameCount: compact.clawdInfo.frames
+            frameWidth: compact.clawdInfo.width
+            frameHeight: compact.clawdInfo.height
+            frameDuration: compact.clawdInfo.interval_ms
 
             // Yellow "awaiting permission" dot on top of the notification anim.
             Rectangle {

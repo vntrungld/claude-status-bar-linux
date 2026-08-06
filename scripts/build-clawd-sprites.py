@@ -19,7 +19,7 @@ except ImportError:
     sys.exit("error: Pillow is required (pip install --user Pillow)")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "..", "platforms", "kde", "package", "contents", "icons", "clawd")
+SRC = os.path.join(HERE, "..", "assets", "clawd-src")
 OUT = os.path.join(HERE, "..", "shared", "clawd")
 
 # The source art has no frame durations. 12fps matches the original clawd-tank
