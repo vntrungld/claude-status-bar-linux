@@ -1,5 +1,6 @@
 // Entry point: imports every shared test module, then exits non-zero on failure.
 import { report } from './harness.mjs'
+import './test-aggregate.mjs'
 
 const failures = report()
 
