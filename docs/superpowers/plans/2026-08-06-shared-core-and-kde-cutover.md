@@ -20,7 +20,7 @@
 - The KDE widget must be **behaviourally identical** at the end of this plan, with exactly two documented exceptions: the `started_at` truncation fix (Task 3) and the sprite frame rate (Task 12).
 - Python stays **stdlib-only** for anything installed to `bin/`. Pillow is allowed only in `scripts/build-clawd-sprites.py`, a maintainer tool that is never installed.
 - Existing hook behaviour, session file format, and usage-fetch output shape are untouched.
-- Every task ends with a passing `python3 -m pytest` (baseline: 52 tests) plus the shared suite once it exists.
+- Every task ends with a passing `python3 -m pytest` plus the shared suite once it exists. The Python baseline is **52 tests through Task 7**; Task 8 deliberately changes it to **50** by removing the eight aggregate tests and adding six session tests. A task that changes the count without saying so has broken something.
 
 ---
 
