@@ -3,3 +3,15 @@
 .claude-panel-box {
     spacing: 4px;
 }
+
+.claude-usage-box {
+    spacing: 3px;
+}
+
+/* Coloured status dot; the colour itself is set inline from
+   shared/usage.mjs so both frontends use identical thresholds. */
+.claude-usage-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+}
