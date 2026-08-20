@@ -3,6 +3,20 @@
 Date: 2026-08-06
 Status: approved, pending implementation plan
 
+**GNOME frontend implemented:** commits `9a49355..80f3688` on this branch
+(2026-08-20), against the GNOME Shell frontend plan
+(`docs/superpowers/plans/2026-08-06-gnome-shell-frontend.md`). Verified
+against GNOME Shell **49.0** on Ubuntu (headless, `GSETTINGS_BACKEND=memory`
+isolated from the real desktop's dconf, plus live reloads onto that real
+desktop's panel) — declared support for 45–50 per `shell-version` in
+`metadata.json` is otherwise untested. The `Animation`/`AnimatedIcon`
+sprite-sheet classes the plan assumed existed in `ui/animation.js` do not on
+this version (only `Spinner` does); `ClawdSprite` uses the plan's documented
+CSS-background fallback instead. **Not verified on this pass:** a real KDE
+install (this development machine has no Plasma/`kpackagetool6` installed at
+all) and a true side-by-side KDE/GNOME visual comparison — both require a
+second, KDE-capable machine.
+
 ## Goal
 
 Let GNOME Shell users run the Claude status bar with the same features KDE users
