@@ -54,4 +54,17 @@
 .claude-account-updated { font-size: 0.85em; opacity: 0.6; }
 .claude-account-nodata { font-size: 0.85em; opacity: 0.6; }
 .claude-switch-button { padding: 2px 8px; border-radius: 4px; }
-.claude-refresh-button { padding: 2px; }
+.claude-refresh-button { padding: 2px; border-radius: 4px; }
+
+/* GNOME Shell's own buttons signal clickability with a hover background,
+   not a cursor change -- St.Button has no cursor-icon concept, and Shell's
+   own panel/popup buttons (Quick Settings, Activities, etc.) never show a
+   hand cursor either, so this matches the platform rather than the web. */
+.claude-switch-button:hover,
+.claude-refresh-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+.claude-switch-button:active,
+.claude-refresh-button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}

@@ -46,9 +46,13 @@ class UsageBar extends St.BoxLayout {
         this._row.add_child(this._name)
 
         // St has no progress bar; a fixed-width trough with a styled fill is
-        // the standard shell idiom.
-        this._trough = new St.Widget({style_class: 'claude-usage-trough'})
-        this._fill = new St.Widget({style_class: 'claude-usage-fill'})
+        // the standard shell idiom. x_expand must be pinned false -- an
+        // St.BoxLayout child otherwise stretches into whatever spare width
+        // the row has (here, the popup's min-width: 300px), overriding the
+        // trough's CSS width and rendering far too wide. Same failure mode
+        // ClawdSprite hit; see that fix's commit for the full explanation.
+        this._trough = new St.Widget({style_class: 'claude-usage-trough', x_expand: false})
+        this._fill = new St.Widget({style_class: 'claude-usage-fill', x_expand: false})
         this._trough.add_child(this._fill)
         this._row.add_child(this._trough)
 

@@ -49,6 +49,7 @@ export const ClaudeIndicator = GObject.registerClass({
             style_class: 'claude-waiting-dot',
             x_align: Clutter.ActorAlign.END,
             y_align: Clutter.ActorAlign.END,
+            x_expand: false, y_expand: false,
         })
         this._clawdOverlay.add_child(this._waitingDot)
         this._box.add_child(this._clawdOverlay)
@@ -90,6 +91,7 @@ export const ClaudeIndicator = GObject.registerClass({
         return new St.Widget({
             style_class: 'claude-usage-dot',
             y_align: Clutter.ActorAlign.CENTER,
+            x_expand: false, y_expand: false,
         })
     }
 
