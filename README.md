@@ -1,13 +1,25 @@
-# Claude Status Bar for KDE
+# Claude Status Bar
 
-A KDE Plasma 6 plasmoid showing Claude Code's live activity in the panel, with
-the account's 5-hour and weekly usage percentages on the right.
+Shows Claude Code's live activity in your panel, with the account's 5-hour
+and weekly usage percentages on the right — a KDE Plasma 6 plasmoid and a
+GNOME Shell extension, built on the same Python hooks and JavaScript core.
 
 - **Panel:** state glyph, tool label ("Editing"…), an elapsed timer, and
   `5h N% · 7d N%`.
 - **Popup:** per-session list plus 5-hour / weekly usage bars, each with a
   reset-time countdown and a manual refresh button.
-- **Configure** (right-click → Configure): hide the panel usage percentages.
+- **Configure** (KDE: right-click → Configure; GNOME: Extensions app →
+  Settings): hide the panel usage percentages.
+
+## Supported desktops
+
+| Desktop | Frontend | Status |
+|---|---|---|
+| KDE Plasma 6 | Plasmoid (`platforms/kde`) | Developed and tested on Plasma 6 |
+| GNOME Shell 45+ | Shell extension (`platforms/gnome`) | Verified on GNOME Shell 49; declared for 45–50, earlier versions untested |
+
+Both frontends share the same Python hooks and the same JavaScript core
+(`shared/`), so activity, usage, and account switching behave identically.
 
 ## Screenshots
 
@@ -27,13 +39,16 @@ Popup — per-session list plus 5-hour / weekly usage bars with reset countdowns
 
 ## Requirements
 
-Make sure all of these are present **before** running the installer:
+Make sure all of these are present **before** running the installer. The
+first two rows are desktop-specific — you only need the row matching yours.
 
 | Requirement | Why | Check |
 |---|---|---|
-| **KDE Plasma 6** (Qt6 / KF6) | The widget targets the Plasma 6 applet API. Plasma 5 is not supported. | `plasmashell --version` |
-| **`kpackagetool6`** | Installs/upgrades the plasmoid package. Ships with Plasma 6. | `which kpackagetool6` |
-| **Python 3** | Runs the hook, aggregate, and usage-fetch scripts. | `python3 --version` |
+| **KDE:** Plasma 6 (Qt6 / KF6) | The widget targets the Plasma 6 applet API. Plasma 5 is not supported. | `plasmashell --version` |
+| **KDE:** `kpackagetool6` | Installs/upgrades the plasmoid package. Ships with Plasma 6. | `which kpackagetool6` |
+| **GNOME:** GNOME Shell 45+ | The extension targets the ESM-era extension API. Shell 44 and older is not supported. | `gnome-shell --version` |
+| **GNOME:** `gjs` | Runs the extension and its preferences window. Ships with GNOME Shell. | `gjs --version` |
+| **Python 3** | Runs the hook, session-reading, and usage-fetch scripts (both desktops). | `python3 --version` |
 | **Claude Code CLI, logged in** | Usage is read from the local OAuth token at `~/.claude/.credentials.json`. | `claude --version` |
 
 The installer also reads `~/.claude/settings.json` (creating it if missing) to
@@ -47,17 +62,30 @@ directory.
 From the repository root:
 
 ```bash
-./install.sh
+./install.sh            # auto-detects KDE or GNOME from XDG_CURRENT_DESKTOP
+./install.sh --kde      # or force a target
+./install.sh --gnome
 ```
 
-Then **add the widget to a panel**: right-click your panel → *Add Widgets…* →
-search for **Claude Status Bar** → click to add.
-
-If the widget does not show up in the list immediately, restart Plasma Shell:
+**KDE:** add the widget to a panel — right-click your panel → *Add Widgets…* →
+search for **Claude Status Bar** → click to add. If it does not show up in the
+list immediately, restart Plasma Shell:
 
 ```bash
 kquitapp6 plasmashell && kstart plasmashell
 ```
+
+**GNOME:** enable the extension:
+
+```bash
+gnome-extensions enable claude-status-bar@vntrungld.github.io
+```
+
+On GNOME Shell 45+/Wayland this takes effect immediately, no logout needed —
+tested by installing and enabling from scratch. If `gnome-extensions info
+claude-status-bar@vntrungld.github.io` reports `State: INACTIVE` right after
+enabling, GNOME disables extensions while the screen is locked (by design,
+see Troubleshooting); it will pick back up once you unlock.
 
 That's it. Open a Claude Code session in a terminal and the panel will start
 updating.
@@ -66,7 +94,9 @@ updating.
 
 ## What the installer does
 
-`install.sh` performs three steps, all scoped to your user account:
+`install.sh` performs three steps, all scoped to your user account. The first
+two are identical on both desktops; the third branches on `--kde`/`--gnome`
+or auto-detection.
 
 ### 1. Copies the Python scripts
 
@@ -75,9 +105,14 @@ Into `${XDG_DATA_HOME:-$HOME/.local/share}/claude-status-bar/bin/`:
 - `statusbar_paths.py` — shared path helpers
 - `claude-status-hook.py` — turns each Claude Code hook event into a
   per-session status file
-- `claude-status-aggregate.py` — merges all session files into one JSON line
-  (polled by the plasmoid)
-- `usage-fetch.py` — fetches subscription usage and caches it
+- `claude-status-sessions.py` — prints the raw session documents as a JSON
+  array; both frontends merge them with the same rules via
+  `shared/aggregate.mjs` (this replaced `claude-status-aggregate.py`, which
+  used to do that merge itself, in Python, for KDE only)
+- `usage-fetch.py` — fetches single-account subscription usage and caches it
+- `token-slayer-usage-fetch.py` — the script both frontends actually call;
+  wraps `usage-fetch.py` and adds multi-account support when `token-slayer`
+  is configured
 
 It also **bakes your installed Claude version** into `usage-fetch.py`'s
 User-Agent header (read from `claude --version`), so the usage endpoint sees a
@@ -97,11 +132,19 @@ Each hook simply runs `python3 <bin>/claude-status-hook.py <EventName>`, which
 writes a small JSON file describing the session's current state. Hooks always
 exit 0 and can never fail your Claude Code session.
 
-### 3. Installs the plasmoid
+### 3. Assembles and installs the frontend
 
-Via `kpackagetool6`, installing the `package/` directory as the
-`org.kde.claudestatusbar` applet (falling back to `--upgrade` if it's already
-installed).
+The installer **assembles** a self-contained bundle rather than just copying
+files, because `shared/` (the JavaScript core both frontends consume) is
+copied into each bundle rather than referenced from the repo:
+
+- **KDE:** `platforms/kde/package/` plus `shared/` (as
+  `contents/shared/`) are assembled into `build/kde/package/`, then installed
+  via `kpackagetool6` as the `org.kde.claudestatusbar` applet (falling back to
+  `--upgrade` if it's already installed).
+- **GNOME:** `platforms/gnome/*` plus `shared/` are assembled directly into
+  `~/.local/share/gnome-shell/extensions/claude-status-bar@vntrungld.github.io/`,
+  then `glib-compile-schemas` compiles its GSettings schema.
 
 ---
 
@@ -111,16 +154,17 @@ installed).
    ```bash
    ls ~/.local/share/claude-status-bar/bin/
    ```
-   You should see the four `.py` files.
+   You should see five `.py` files.
 
 2. **Hooks registered:**
    ```bash
    grep claude-status-hook ~/.claude/settings.json
    ```
 
-3. **Plasmoid registered:**
+3. **Frontend registered:**
    ```bash
-   kpackagetool6 --type Plasma/Applet --list | grep claudestatusbar
+   kpackagetool6 --type Plasma/Applet --list | grep claudestatusbar   # KDE
+   gnome-extensions info claude-status-bar@vntrungld.github.io        # GNOME
    ```
 
 4. **End to end:** start a Claude Code session in any terminal. Within a couple
@@ -152,19 +196,27 @@ refresh button in the popup forces an immediate re-fetch.
 
 ## Updating
 
-Pull the latest changes and re-run the installer — it upgrades the package and
-re-syncs the scripts and hooks in place:
+Pull the latest changes and re-run the installer — it re-assembles the
+frontend bundle and re-syncs the scripts and hooks in place:
 
 ```bash
 git pull
 ./install.sh
 ```
 
-If you changed only the QML (widget UI), a Plasma Shell restart is needed to
-clear its applet cache:
+**KDE:** if you changed only the QML (widget UI), a Plasma Shell restart is
+needed to clear its applet cache:
 
 ```bash
 kquitapp6 plasmashell && kstart plasmashell
+```
+
+**GNOME:** the running extension keeps its old code in memory until reloaded;
+a disable/enable cycle picks up the new files:
+
+```bash
+gnome-extensions disable claude-status-bar@vntrungld.github.io
+gnome-extensions enable claude-status-bar@vntrungld.github.io
 ```
 
 ---
@@ -172,13 +224,16 @@ kquitapp6 plasmashell && kstart plasmashell
 ## Uninstall
 
 ```bash
-./uninstall.sh
+./uninstall.sh            # auto-detects, same as install.sh
+./uninstall.sh --kde
+./uninstall.sh --gnome
 ```
 
-This removes the plasmoid and strips **only** our hook entries from
-`~/.claude/settings.json` (again backing it up first). It intentionally leaves
-the data directory (`~/.local/share/claude-status-bar/`) in place — remove it
-manually if you want a clean slate:
+This removes the frontend (plasmoid or GNOME extension) and strips **only**
+our hook entries from `~/.claude/settings.json` (again backing it up first).
+It intentionally leaves the data directory
+(`~/.local/share/claude-status-bar/`) in place — remove it manually if you
+want a clean slate:
 
 ```bash
 rm -rf ~/.local/share/claude-status-bar
@@ -188,10 +243,19 @@ rm -rf ~/.local/share/claude-status-bar
 
 ## Troubleshooting
 
-**Widget doesn't appear in "Add Widgets".**
+**Widget doesn't appear in "Add Widgets" (KDE).**
 Restart Plasma Shell: `kquitapp6 plasmashell && kstart plasmashell`. Confirm it
 is registered with `kpackagetool6 --type Plasma/Applet --list | grep
 claudestatusbar`.
+
+**Extension does not appear or won't stay enabled (GNOME).**
+Check it is installed and enabled:
+`gnome-extensions info claude-status-bar@vntrungld.github.io`. If `State`
+reads `INACTIVE` right after enabling, check whether the screen is currently
+locked — GNOME disables `sessionModes: ['user']` extensions like this one
+while locked, by design, and re-activates them on unlock; this is not
+specific to this extension. Check for load errors with
+`journalctl --user -b | grep claude-status-bar`.
 
 **Panel never updates during a Claude session.**
 Check that the hooks landed in `~/.claude/settings.json` (see *Verifying*
@@ -203,27 +267,29 @@ the hooks aren't firing — re-run `./install.sh`.
 Make sure Claude Code is logged in (`~/.claude/.credentials.json` exists). Run
 the fetcher directly to see the error:
 ```bash
-python3 ~/.local/share/claude-status-bar/bin/usage-fetch.py
+python3 ~/.local/share/claude-status-bar/bin/token-slayer-usage-fetch.py
 ```
 A `reauth` status means the OAuth token expired — re-login with Claude Code. A
 `rate_limited` status means you hit the endpoint's rate limit; it will recover
 on the next poll.
 
-**`kpackagetool6: command not found`.**
-You're likely on Plasma 5 or KDE isn't fully installed. This plasmoid requires
+**`kpackagetool6: command not found` (KDE).**
+You're likely on Plasma 5 or KDE isn't fully installed. The plasmoid requires
 Plasma 6.
 
 ---
 
 ## Development
 
-Run the Python test suite with:
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the repository layout, the
+shared-core rule, and how to develop the GNOME extension from a KDE session
+without logging out. Quick reference for the three test suites:
 
 ```bash
-python3 -m pytest
+python3 -m pytest            # Python: hooks, sessions, usage-fetch, paths, settings-merge
+./tests/run-shared-tests.sh  # shared/*.mjs: aggregate, labels, usage, shimmer
+./tests/run-qml-tests.sh     # proves the shared modules load inside Qt/QML
 ```
-
-Tests cover the hook, aggregate, usage-fetch, path, and settings-merge logic.
 
 ---
 
