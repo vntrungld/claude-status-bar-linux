@@ -7,12 +7,13 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js'
 
 import {toolLabel, fmt} from '../shared/labels.mjs'
 import {usagePctText, usageDotColor} from '../shared/usage.mjs'
+import {ClawdSprite} from './clawd.js'
 
 const EMPTY_USAGE = {status: 'loading', five_hour: {}, seven_day: {}}
 
 export const ClaudeIndicator = GObject.registerClass(
 class ClaudeIndicator extends PanelMenu.Button {
-    _init() {
+    _init(extPath) {
         super._init(0.0, 'Claude Status Bar')
 
         this._agg = {state: 'idle', tool: null, started_at: null,
@@ -24,12 +25,21 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._box = new St.BoxLayout({style_class: 'claude-panel-box'})
         this.add_child(this._box)
 
-        // Placeholder until the sprite lands; keeps layout honest meanwhile.
-        this._icon = new St.Icon({
-            icon_name: 'utilities-terminal-symbolic',
-            style_class: 'system-status-icon',
+        // Clawd sprite with the yellow "awaiting permission" dot overlaid on
+        // its bottom-right corner, matching the plasmoid's CompactView.qml.
+        this._clawdOverlay = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            y_align: Clutter.ActorAlign.CENTER,
         })
-        this._box.add_child(this._icon)
+        this._clawd = new ClawdSprite(extPath, 16)
+        this._clawdOverlay.add_child(this._clawd)
+        this._waitingDot = new St.Widget({
+            style_class: 'claude-waiting-dot',
+            x_align: Clutter.ActorAlign.END,
+            y_align: Clutter.ActorAlign.END,
+        })
+        this._clawdOverlay.add_child(this._waitingDot)
+        this._box.add_child(this._clawdOverlay)
 
         this._toolLabel = new St.Label({y_align: Clutter.ActorAlign.CENTER})
         this._box.add_child(this._toolLabel)
@@ -106,6 +116,9 @@ class ClaudeIndicator extends PanelMenu.Button {
         if (showText)
             this._toolLabel.text = `${this._agg.state === 'tool' ? toolLabel(this._agg.tool) : 'Thinking'}…`
 
+        this._clawd.setState(this._agg.state, this._agg.tool)
+        this._waitingDot.visible = this._agg.state === 'waiting'
+
         this._renderElapsed()
 
         this._usageBox.visible = this._showUsage
@@ -121,6 +134,7 @@ class ClaudeIndicator extends PanelMenu.Button {
             GLib.Source.remove(this._elapsedId)
             this._elapsedId = 0
         }
+        this._clawd?.destroy()
         super.destroy()
     }
 })

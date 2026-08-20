@@ -6,7 +6,7 @@ import {ClaudeIndicator} from './lib/indicator.js'
 
 export default class ClaudeStatusBarExtension extends Extension {
     enable() {
-        this._indicator = new ClaudeIndicator()
+        this._indicator = new ClaudeIndicator(this.path)
         Main.panel.addToStatusArea(this.uuid, this._indicator)
         this._sessions = new SessionSource(agg => this._indicator?.setAgg(agg))
         this._sessions.start()
