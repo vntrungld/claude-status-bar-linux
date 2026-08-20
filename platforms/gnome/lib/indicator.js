@@ -5,9 +5,10 @@ import Clutter from 'gi://Clutter'
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js'
 
-import {toolLabel, fmt} from '../shared/labels.mjs'
+import {toolLabel, fmt, THINKING_WORDS, pickThinkingWord} from '../shared/labels.mjs'
 import {usagePctText, usageDotColor} from '../shared/usage.mjs'
 import {ClawdSprite} from './clawd.js'
+import {ShimmerLabel} from './shimmer.js'
 
 const EMPTY_USAGE = {status: 'loading', five_hour: {}, seven_day: {}}
 
@@ -41,8 +42,10 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._clawdOverlay.add_child(this._waitingDot)
         this._box.add_child(this._clawdOverlay)
 
-        this._toolLabel = new St.Label({y_align: Clutter.ActorAlign.CENTER})
+        this._toolLabel = new ShimmerLabel()
         this._box.add_child(this._toolLabel)
+        this._thinkingWord = THINKING_WORDS[0]
+        this._prevState = ''
 
         this._elapsedLabel = new St.Label({y_align: Clutter.ActorAlign.CENTER})
         this._box.add_child(this._elapsedLabel)
@@ -111,10 +114,21 @@ class ClaudeIndicator extends PanelMenu.Button {
     }
 
     _render() {
+        // A fresh word is chosen each time a session enters the thinking state
+        // and held for that phase, avoiding an immediate repeat.
+        if (this._agg.state === 'thinking' && this._prevState !== 'thinking')
+            this._thinkingWord = pickThinkingWord(this._thinkingWord, Math.random)
+        this._prevState = this._agg.state
+
         const showText = this._agg.state === 'thinking' || this._agg.state === 'tool'
         this._toolLabel.visible = showText
-        if (showText)
-            this._toolLabel.text = `${this._agg.state === 'tool' ? toolLabel(this._agg.tool) : 'Thinking'}…`
+        if (showText) {
+            const word = this._agg.state === 'tool'
+                ? toolLabel(this._agg.tool) : this._thinkingWord
+            this._toolLabel.setText(`${word}…`)
+        } else {
+            this._toolLabel.stop()
+        }
 
         this._clawd.setState(this._agg.state, this._agg.tool)
         this._waitingDot.visible = this._agg.state === 'waiting'
@@ -135,6 +149,7 @@ class ClaudeIndicator extends PanelMenu.Button {
             this._elapsedId = 0
         }
         this._clawd?.destroy()
+        this._toolLabel?.destroy()
         super.destroy()
     }
 })
