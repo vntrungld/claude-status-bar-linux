@@ -33,6 +33,10 @@ class ClawdSprite extends St.Widget {
         this._interval = 0
         this._baseStyle = ''
         this._timerId = 0
+        // See ShimmerLabel: the 'destroy' signal fires on every disposal
+        // path, unlike our own destroy() override which only runs when
+        // something calls .destroy() explicitly.
+        this.connect('destroy', () => this._stopTimer())
 
         this.setState('idle', null)
     }

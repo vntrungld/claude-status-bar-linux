@@ -22,6 +22,10 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._usage = EMPTY_USAGE
         this._showUsage = true
         this._elapsedId = 0
+        // See ShimmerLabel/ClawdSprite: the 'destroy' signal fires on every
+        // disposal path, unlike our own destroy() override which only runs
+        // when something calls .destroy() explicitly.
+        this.connect('destroy', () => this._stopElapsed())
 
         this._box = new St.BoxLayout({style_class: 'claude-panel-box'})
         this.add_child(this._box)
@@ -86,10 +90,16 @@ class ClaudeIndicator extends PanelMenu.Button {
                 return GLib.SOURCE_CONTINUE
             })
         } else if (agg.started_at === null && this._elapsedId) {
+            this._stopElapsed()
+        }
+        this._render()
+    }
+
+    _stopElapsed() {
+        if (this._elapsedId) {
             GLib.Source.remove(this._elapsedId)
             this._elapsedId = 0
         }
-        this._render()
     }
 
     setUsage(usage) {
@@ -101,6 +111,9 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._showUsage = show
         this._render()
     }
+
+    // No-op until Task 7 gives it a spinner.
+    setFetching(_fetching) {}
 
     _renderElapsed() {
         const started = this._agg.started_at
@@ -144,10 +157,7 @@ class ClaudeIndicator extends PanelMenu.Button {
     }
 
     destroy() {
-        if (this._elapsedId) {
-            GLib.Source.remove(this._elapsedId)
-            this._elapsedId = 0
-        }
+        this._stopElapsed()
         this._clawd?.destroy()
         this._toolLabel?.destroy()
         super.destroy()

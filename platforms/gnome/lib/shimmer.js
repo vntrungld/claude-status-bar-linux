@@ -19,6 +19,12 @@ class ShimmerLabel extends St.BoxLayout {
         this._text = ''
         this._head = 0
         this._tickId = 0
+        // The 'destroy' signal fires whenever the underlying actor is
+        // disposed, including paths that bypass our destroy() override (e.g.
+        // Clutter tearing down the stage directly on shell shutdown). Without
+        // this, the tick timer outlives the disposed St.Label children and
+        // throws on the next tick.
+        this.connect('destroy', () => this.stop())
     }
 
     setText(str) {
