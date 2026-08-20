@@ -7,6 +7,12 @@ import {ClaudeIndicator} from './lib/indicator.js'
 
 export default class ClaudeStatusBarExtension extends Extension {
     enable() {
+        // Defensive: if enable() ever runs again without an intervening
+        // disable(), tear down any previous indicator first instead of
+        // leaking it into the panel.
+        if (this._indicator)
+            this.disable()
+
         this._indicator = new ClaudeIndicator(this.path)
         Main.panel.addToStatusArea(this.uuid, this._indicator)
 

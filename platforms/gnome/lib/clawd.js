@@ -22,7 +22,19 @@ import {FRAMES} from '../shared/clawd/frames.mjs'
 export const ClawdSprite = GObject.registerClass(
 class ClawdSprite extends St.Widget {
     _init(extPath, size) {
-        super._init({style_class: 'claude-clawd'})
+        // x/y_expand: false and clip_to_allocation both guard against the
+        // same failure mode: if this actor's allocation ever ends up wider
+        // than `size` (a stretching layout, a parent with spare space to
+        // give away), the background-image sprite sheet tiles across the
+        // extra width instead of showing one clipped frame -- observed live
+        // as several repeated Clawd frames in the panel. clip_to_allocation
+        // is a Clutter.Actor property, not CSS, so it's set here rather than
+        // in stylesheet.css, where St's theme parser may not recognise it.
+        super._init({
+            style_class: 'claude-clawd',
+            x_expand: false, y_expand: false,
+            clip_to_allocation: true,
+        })
         this._extPath = extPath
         this._size = size
         this.set_size(size, size)

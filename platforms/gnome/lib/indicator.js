@@ -41,6 +41,7 @@ export const ClaudeIndicator = GObject.registerClass({
         this._clawdOverlay = new St.Widget({
             layout_manager: new Clutter.BinLayout(),
             y_align: Clutter.ActorAlign.CENTER,
+            x_expand: false, y_expand: false,
         })
         this._clawd = new ClawdSprite(extPath, 16)
         this._clawdOverlay.add_child(this._clawd)

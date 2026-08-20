@@ -211,12 +211,15 @@ needed to clear its applet cache:
 kquitapp6 plasmashell && kstart plasmashell
 ```
 
-**GNOME:** the running extension keeps its old code in memory until reloaded;
-a disable/enable cycle picks up the new files:
+**GNOME:** `extension.js` itself reloads fresh on `disable`/`enable`, but GJS
+caches every file it `import`s (everything under `lib/`, `shared/`) for the
+life of the gnome-shell process — a disable/enable cycle will **not** pick up
+a changed `lib/*.js` file, confirmed by direct testing. Log out and back in
+to get a fresh process:
 
 ```bash
-gnome-extensions disable claude-status-bar@vntrungld.github.io
-gnome-extensions enable claude-status-bar@vntrungld.github.io
+gnome-extensions disable claude-status-bar@vntrungld.github.io  # optional, cosmetic only
+gnome-extensions enable claude-status-bar@vntrungld.github.io   # after logging back in
 ```
 
 ---
