@@ -4,16 +4,22 @@ import St from 'gi://St'
 import Clutter from 'gi://Clutter'
 
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js'
+import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js'
 
 import {toolLabel, fmt, THINKING_WORDS, pickThinkingWord} from '../shared/labels.mjs'
 import {usagePctText, usageDotColor} from '../shared/usage.mjs'
 import {ClawdSprite} from './clawd.js'
 import {ShimmerLabel} from './shimmer.js'
+import {PopupContent} from './popup.js'
 
 const EMPTY_USAGE = {status: 'loading', five_hour: {}, seven_day: {}}
 
-export const ClaudeIndicator = GObject.registerClass(
-class ClaudeIndicator extends PanelMenu.Button {
+export const ClaudeIndicator = GObject.registerClass({
+    Signals: {
+        'refresh-requested': {},
+        'switch-requested': {param_types: [GObject.TYPE_STRING]},
+    },
+}, class ClaudeIndicator extends PanelMenu.Button {
     _init(extPath) {
         super._init(0.0, 'Claude Status Bar')
 
@@ -66,6 +72,16 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._usageBox.add_child(this._sevenDot)
         this._usageBox.add_child(this._sevenLabel)
 
+        this._popup = new PopupContent()
+        const item = new PopupMenu.PopupBaseMenuItem({
+            reactive: false, can_focus: false,
+        })
+        item.add_child(this._popup)
+        this.menu.addMenuItem(item)
+
+        this._popup.connect('refresh-requested', () => this.emit('refresh-requested'))
+        this._popup.connect('switch-requested', (_p, name) => this.emit('switch-requested', name))
+
         this._render()
     }
 
@@ -92,6 +108,7 @@ class ClaudeIndicator extends PanelMenu.Button {
         } else if (agg.started_at === null && this._elapsedId) {
             this._stopElapsed()
         }
+        this._popup.setAgg(agg)
         this._render()
     }
 
@@ -104,6 +121,7 @@ class ClaudeIndicator extends PanelMenu.Button {
 
     setUsage(usage) {
         this._usage = usage || EMPTY_USAGE
+        this._popup.setUsage(this._usage)
         this._render()
     }
 
@@ -112,8 +130,9 @@ class ClaudeIndicator extends PanelMenu.Button {
         this._render()
     }
 
-    // No-op until Task 7 gives it a spinner.
-    setFetching(_fetching) {}
+    setFetching(fetching) {
+        this._popup.setFetching(fetching)
+    }
 
     _renderElapsed() {
         const started = this._agg.started_at

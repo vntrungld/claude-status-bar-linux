@@ -29,3 +29,29 @@
     background-color: #f5c451;
     border: 1px solid rgba(0, 0, 0, 0.25);
 }
+
+.claude-popup { spacing: 6px; padding: 8px; min-width: 300px; }
+.claude-popup-heading { font-weight: bold; }
+.claude-popup-dim { opacity: 0.7; }
+.claude-popup-usage-header { spacing: 6px; }
+.claude-session-row { spacing: 8px; }
+.claude-usage-bar { spacing: 2px; }
+.claude-usage-bar-row { spacing: 6px; }
+.claude-usage-bar-name { min-width: 60px; }
+.claude-usage-trough {
+    width: 120px; height: 8px; border-radius: 4px;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+.claude-usage-fill {
+    height: 8px; border-radius: 4px;
+    background-color: #3fb950;
+}
+.claude-usage-reset { font-size: 0.85em; opacity: 0.6; }
+.claude-account { spacing: 4px; padding: 4px 0; }
+.claude-account-header { spacing: 6px; }
+.claude-account-name { font-weight: bold; }
+.claude-account-active { font-size: 0.85em; color: #6ab7ff; }
+.claude-account-updated { font-size: 0.85em; opacity: 0.6; }
+.claude-account-nodata { font-size: 0.85em; opacity: 0.6; }
+.claude-switch-button { padding: 2px 8px; border-radius: 4px; }
+.claude-refresh-button { padding: 2px; }

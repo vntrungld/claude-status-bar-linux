@@ -115,8 +115,13 @@ export class UsageSource {
                     this._usage = parsed
                     this._onChanged(parsed)
                 } catch (e) {
-                    // Keep the previous value, exactly as the plasmoid does.
-                    logError(e, 'claude-status-bar: usage fetch failed')
+                    // A cancellation means stop() tore this fetch down on
+                    // purpose (disable, or a fresh refresh/switchAccount
+                    // superseding it) -- not a failure, so it stays silent.
+                    // Everything else keeps the previous value, exactly as
+                    // the plasmoid does, but is worth logging.
+                    if (!e.matches(Gio.IOErrorEnum, Gio.IOErrorEnum.CANCELLED))
+                        logError(e, 'claude-status-bar: usage fetch failed')
                 }
             })
         } catch (e) {

@@ -23,6 +23,9 @@ export default class ClaudeStatusBarExtension extends Extension {
             usage => this._indicator?.setUsage(usage),
             fetching => this._indicator?.setFetching(fetching))
         this._usage.start()
+
+        this._indicator.connect('refresh-requested', () => this._usage?.refresh())
+        this._indicator.connect('switch-requested', (_i, name) => this._usage?.switchAccount(name))
     }
 
     disable() {
