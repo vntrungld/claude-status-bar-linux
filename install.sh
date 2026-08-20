@@ -65,6 +65,17 @@ if [ "$DESKTOP" = kde ]; then
   echo "Done. Add the 'Claude Status Bar' widget to a panel."
   echo "If it does not appear, run: kquitapp6 plasmashell && kstart plasmashell"
 else
-  echo "GNOME frontend is not installed by this version yet."
-  exit 1
+  UUID="claude-status-bar@vntrungld.github.io"
+  EXTDIR="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$UUID"
+  echo "Installing GNOME extension to $EXTDIR"
+  rm -rf "$EXTDIR"
+  mkdir -p "$EXTDIR"
+  cp -r "$HERE/platforms/gnome/." "$EXTDIR/"
+  # Extensions must be self-contained, so the shared core is copied in.
+  cp -r "$HERE/shared" "$EXTDIR/shared"
+  glib-compile-schemas "$EXTDIR/schemas"
+
+  echo "Done. Enable the extension with:"
+  echo "  gnome-extensions enable $UUID"
+  echo "Then log out and back in (or use a nested shell for development)."
 fi

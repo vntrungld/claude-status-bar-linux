@@ -1,0 +1,5 @@
+/* Styles for the Claude Status Bar indicator. Class names are prefixed
+   `claude-` to avoid colliding with the shell's own theme. */
+.claude-panel-box {
+    spacing: 4px;
+}

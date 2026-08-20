@@ -27,7 +27,11 @@ if [ "$DESKTOP" = kde ]; then
   echo "Removing plasmoid"
   kpackagetool6 --type Plasma/Applet --remove org.kde.claudestatusbar || true
 else
-  echo "GNOME frontend is not installed by this version yet."
+  UUID="claude-status-bar@vntrungld.github.io"
+  EXTDIR="${XDG_DATA_HOME:-$HOME/.local/share}/gnome-shell/extensions/$UUID"
+  echo "Removing GNOME extension"
+  gnome-extensions disable "$UUID" 2>/dev/null || true
+  rm -rf "$EXTDIR"
 fi
 
 if [ -f "$SETTINGS" ]; then

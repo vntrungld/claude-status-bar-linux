@@ -1,0 +1,10 @@
+{
+    "uuid": "claude-status-bar@vntrungld.github.io",
+    "name": "Claude Status Bar",
+    "description": "Live Claude Code activity and usage in the top bar",
+    "shell-version": ["45", "46", "47", "48", "49", "50"],
+    "url": "https://github.com/vntrungld/claude-status-bar",
+    "settings-schema": "org.gnome.shell.extensions.claude-status-bar",
+    "version": 1,
+    "version-name": "0.2.0"
+}
