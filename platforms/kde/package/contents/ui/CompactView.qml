@@ -60,6 +60,27 @@ MouseArea {
         onTriggered: elapsed = Math.max(0, Math.floor(Date.now()/1000 - agg.started_at))
     }
 
+    // Every animation frame repaints the whole panel window (plasmashell and
+    // kwin both wake up): looping Clawd plus the shimmer cost close to a full
+    // core. So animate in a short burst whenever what is shown changes, then
+    // hold still. agg is replaced on every poll, hence the explicit key
+    // compare rather than reacting to aggChanged.
+    property bool animating: false
+    readonly property string animKey: agg.state + "|" + clawdName + "|" + animText.content
+    property string lastAnimKey: ""
+    onAnimKeyChanged: {
+        if (animKey === lastAnimKey)
+            return
+        lastAnimKey = animKey
+        animating = true
+        burstTimer.restart()
+    }
+    Timer {
+        id: burstTimer
+        interval: 3000
+        onTriggered: compact.animating = false
+    }
+
     // Usage readout helpers: a coloured dot per window (green <50, yellow
     // 50–80, red >=80) plus the percentage.
     property int dotSize: Math.max(6, Math.round(compact.height * 0.26))
@@ -78,7 +99,7 @@ MouseArea {
             width: Layout.preferredWidth
             height: Layout.preferredHeight
             smooth: true
-            running: true
+            running: compact.animating
             loops: AnimatedSprite.Infinite
             // Discrete frame steps, no cross-fade: GNOME blits a clip rect
             // per frame with no blending, so interpolating here would make
@@ -116,16 +137,25 @@ MouseArea {
                                                                      : thinkingWord) + "…"
             readonly property int n: content.length
             property real head: 0   // highlight position: high->low = right->left
-            NumberAnimation on head {
-                running: animText.visible && animText.n > 0
-                from: animText.n + 2; to: -2
-                duration: Shimmer.shimmerDuration(animText.n); loops: Animation.Infinite
+            // Stepped at the sprite's frame rate rather than a NumberAnimation:
+            // an animation ticks at the display refresh rate, forcing a full
+            // panel repaint 60–165×/s for a subtle opacity sweep.
+            Timer {
+                interval: 83; repeat: true
+                running: compact.animating && animText.visible && animText.n > 0
+                onTriggered: {
+                    var span = animText.n + 4   // from n+2 down to -2
+                    var h = animText.head - span * interval / Shimmer.shimmerDuration(animText.n)
+                    animText.head = h < -2 ? animText.n + 2 : h
+                }
             }
             Repeater {
                 model: animText.n
                 PlasmaComponents.Label {
                     text: { var c = animText.content.charAt(index); return c === " " ? " " : c }
-                    opacity: Shimmer.shimmerOpacity(index, animText.head)
+                    // Full brightness at rest; the dim shimmer base would
+                    // otherwise read as disabled text between bursts.
+                    opacity: compact.animating ? Shimmer.shimmerOpacity(index, animText.head) : 1.0
                 }
             }
         }

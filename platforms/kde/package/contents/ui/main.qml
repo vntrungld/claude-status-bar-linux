@@ -62,8 +62,10 @@ PlasmoidItem {
         function run(cmd) { connectSource(cmd) }
     }
 
+    // Each tick forks a python3 (~0.1 s CPU); 2 s keeps state changes prompt
+    // without spending a tenth of a core on polling.
     Timer {
-        interval: 1000; repeat: true; running: true; triggeredOnStart: true
+        interval: 2000; repeat: true; running: true; triggeredOnStart: true
         onTriggered: aggSrc.run(root.aggCmd)
     }
 
