@@ -5,5 +5,8 @@
     <entry name="showUsageOnPanel" type="Bool">
       <default>true</default>
     </entry>
+    <entry name="reduceAnimation" type="Bool">
+      <default>true</default>
+    </entry>
   </group>
 </kcfg>

@@ -64,21 +64,23 @@ MouseArea {
     // kwin both wake up): looping Clawd plus the shimmer cost close to a full
     // core. So animate in a short burst whenever what is shown changes, then
     // hold still. agg is replaced on every poll, hence the explicit key
-    // compare rather than reacting to aggChanged.
-    property bool animating: false
+    // compare rather than reacting to aggChanged. Users who prefer the
+    // always-on animation can turn the reduction off in the settings.
+    property bool bursting: false
+    readonly property bool animating: bursting || !plasmoid.configuration.reduceAnimation
     readonly property string animKey: agg.state + "|" + clawdName + "|" + animText.content
     property string lastAnimKey: ""
     onAnimKeyChanged: {
         if (animKey === lastAnimKey)
             return
         lastAnimKey = animKey
-        animating = true
+        bursting = true
         burstTimer.restart()
     }
     Timer {
         id: burstTimer
         interval: 3000
-        onTriggered: compact.animating = false
+        onTriggered: compact.bursting = false
     }
 
     // Usage readout helpers: a coloured dot per window (green <50, yellow

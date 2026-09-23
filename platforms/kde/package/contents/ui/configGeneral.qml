@@ -10,12 +10,27 @@ KCM.SimpleKCM {
     id: cfgRoot
     property alias cfg_showUsageOnPanel: usageCheck.checked
     property bool cfg_showUsageOnPanelDefault: true
+    property alias cfg_reduceAnimation: reduceAnimCheck.checked
+    property bool cfg_reduceAnimationDefault: true
 
     Kirigami.FormLayout {
         QQC2.CheckBox {
             id: usageCheck
             Kirigami.FormData.label: i18n("Usage:")
             text: i18n("Show 5-hour and weekly usage % on the panel")
+        }
+
+        QQC2.CheckBox {
+            id: reduceAnimCheck
+            Kirigami.FormData.label: i18n("Animation:")
+            text: i18n("Reduce animation (play briefly when status changes)")
+        }
+        QQC2.Label {
+            Layout.maximumWidth: Kirigami.Units.gridUnit * 22
+            wrapMode: Text.WordWrap
+            font: Kirigami.Theme.smallFont
+            opacity: 0.7
+            text: i18n("Continuous animation repaints the whole panel and can use most of a CPU core.")
         }
     }
 }
