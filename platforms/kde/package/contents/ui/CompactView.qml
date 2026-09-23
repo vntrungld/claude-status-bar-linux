@@ -61,27 +61,11 @@ MouseArea {
     }
 
     // Every animation frame repaints the whole panel window (plasmashell and
-    // kwin both wake up): looping Clawd plus the shimmer cost close to a full
-    // core. So animate in a short burst whenever what is shown changes, then
-    // hold still. agg is replaced on every poll, hence the explicit key
-    // compare rather than reacting to aggChanged. Users who prefer the
-    // always-on animation can turn the reduction off in the settings.
-    property bool bursting: false
-    readonly property bool animating: bursting || !plasmoid.configuration.reduceAnimation
-    readonly property string animKey: agg.state + "|" + clawdName + "|" + animText.content
-    property string lastAnimKey: ""
-    onAnimKeyChanged: {
-        if (animKey === lastAnimKey)
-            return
-        lastAnimKey = animKey
-        bursting = true
-        burstTimer.restart()
-    }
-    Timer {
-        id: burstTimer
-        interval: 3000
-        onTriggered: compact.bursting = false
-    }
+    // kwin both wake up), so frames are stepped by Timers and only change
+    // pixels at the sprite rate. Measured (plasmashell + kwin) at ~12 fps:
+    // ~8% of a core for Clawd alone, ~11-14% with the status shimmer shown.
+    // "Reduce animation" steps at a third of that rate (~4 fps).
+    readonly property int frameSlowdown: plasmoid.configuration.reduceAnimation ? 3 : 1
 
     // Usage readout helpers: a coloured dot per window (green <50, yellow
     // 50–80, red >=80) plus the percentage.
@@ -101,7 +85,11 @@ MouseArea {
             width: Layout.preferredWidth
             height: Layout.preferredHeight
             smooth: true
-            running: compact.animating
+            // Kept paused and stepped by frameTimer below: a running
+            // AnimatedSprite repaints on every vsync regardless of
+            // frameDuration, so lowering the frame rate saved nothing.
+            running: true
+            paused: true
             loops: AnimatedSprite.Infinite
             // Discrete frame steps, no cross-fade: GNOME blits a clip rect
             // per frame with no blending, so interpolating here would make
@@ -114,6 +102,14 @@ MouseArea {
             frameWidth: compact.clawdInfo.width
             frameHeight: compact.clawdInfo.height
             frameDuration: compact.clawdInfo.interval_ms
+
+            Timer {
+                id: frameTimer
+                interval: compact.clawdInfo.interval_ms * compact.frameSlowdown
+                repeat: true
+                running: true
+                onTriggered: clawd.advance()
+            }
 
             // Yellow "awaiting permission" dot on top of the notification anim.
             Rectangle {
@@ -143,8 +139,8 @@ MouseArea {
             // an animation ticks at the display refresh rate, forcing a full
             // panel repaint 60–165×/s for a subtle opacity sweep.
             Timer {
-                interval: 83; repeat: true
-                running: compact.animating && animText.visible && animText.n > 0
+                interval: 83 * compact.frameSlowdown; repeat: true
+                running: animText.visible && animText.n > 0
                 onTriggered: {
                     var span = animText.n + 4   // from n+2 down to -2
                     var h = animText.head - span * interval / Shimmer.shimmerDuration(animText.n)
@@ -155,9 +151,7 @@ MouseArea {
                 model: animText.n
                 PlasmaComponents.Label {
                     text: { var c = animText.content.charAt(index); return c === " " ? " " : c }
-                    // Full brightness at rest; the dim shimmer base would
-                    // otherwise read as disabled text between bursts.
-                    opacity: compact.animating ? Shimmer.shimmerOpacity(index, animText.head) : 1.0
+                    opacity: Shimmer.shimmerOpacity(index, animText.head)
                 }
             }
         }

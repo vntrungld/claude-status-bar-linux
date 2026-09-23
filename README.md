@@ -9,9 +9,8 @@ GNOME Shell extension, built on the same Python hooks and JavaScript core.
 - **Popup:** per-session list plus 5-hour / weekly usage bars, each with a
   reset-time countdown and a manual refresh button.
 - **Configure** (KDE: right-click → Configure; GNOME: Extensions app →
-  Settings): hide the panel usage percentages. On KDE you can also turn off
-  *Reduce animation* to keep Clawd animating continuously (costs most of a CPU
-  core, since every frame repaints the whole panel).
+  Settings): hide the panel usage percentages. On KDE, *Reduce animation*
+  plays Clawd at about 4 fps instead of 12 to save a little CPU.
 
 ## Supported desktops
 

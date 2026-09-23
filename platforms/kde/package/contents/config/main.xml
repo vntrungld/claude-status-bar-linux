@@ -6,7 +6,7 @@
       <default>true</default>
     </entry>
     <entry name="reduceAnimation" type="Bool">
-      <default>true</default>
+      <default>false</default>
     </entry>
   </group>
 </kcfg>

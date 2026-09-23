@@ -11,7 +11,7 @@ KCM.SimpleKCM {
     property alias cfg_showUsageOnPanel: usageCheck.checked
     property bool cfg_showUsageOnPanelDefault: true
     property alias cfg_reduceAnimation: reduceAnimCheck.checked
-    property bool cfg_reduceAnimationDefault: true
+    property bool cfg_reduceAnimationDefault: false
 
     Kirigami.FormLayout {
         QQC2.CheckBox {
@@ -23,14 +23,14 @@ KCM.SimpleKCM {
         QQC2.CheckBox {
             id: reduceAnimCheck
             Kirigami.FormData.label: i18n("Animation:")
-            text: i18n("Reduce animation (play briefly when status changes)")
+            text: i18n("Reduce animation (lower frame rate)")
         }
         QQC2.Label {
             Layout.maximumWidth: Kirigami.Units.gridUnit * 22
             wrapMode: Text.WordWrap
             font: Kirigami.Theme.smallFont
             opacity: 0.7
-            text: i18n("Continuous animation repaints the whole panel and can use most of a CPU core.")
+            text: i18n("Plays Clawd and the status shimmer at about 4 fps instead of 12 to save a little CPU.")
         }
     }
 }
