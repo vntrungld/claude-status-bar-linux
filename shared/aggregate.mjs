@@ -3,6 +3,19 @@
 
 export const STALE_SECS = 900
 
+// Idle sessions are never *stale* (an open terminal waiting for a prompt is
+// legitimate), but ones untouched this long are hidden from the list: files of
+// sessions killed without a SessionEnd hook otherwise pile up forever.
+export const IDLE_HIDE_SECS = 1800
+
+// List order: sessions needing attention first, then working, then idle;
+// most recently updated first within each group.
+const STATE_RANK = { waiting: 0, tool: 1, thinking: 2 }
+function rank(x) {
+    const r = STATE_RANK[x.state]
+    return r === undefined ? 3 : r
+}
+
 // Coerce to an integer, mirroring Python's int()-with-fallback. Used for
 // updated_at only, which is compared against a 900s threshold.
 function intOr(v, dflt = 0) {
@@ -48,8 +61,13 @@ export function aggregate(docs, now) {
         .filter(v => v !== null && v > 0)
     const started_at = starts.length ? Math.min(...starts) : null
 
+    const shown = live
+        .filter(x => !(x.state === 'idle' && now - intOr(x.updated_at) > IDLE_HIDE_SECS))
+        .sort((a, b) => rank(a) - rank(b) || intOr(b.updated_at) - intOr(a.updated_at))
+
     return { state, tool, started_at,
              active_count: active.length,
              waiting_count: waiting.length,
-             sessions: live }
+             hidden_idle_count: live.length - shown.length,
+             sessions: shown }
 }

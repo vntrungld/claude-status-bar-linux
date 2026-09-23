@@ -15,7 +15,10 @@ Item {
     Layout.minimumWidth: Kirigami.Units.gridUnit * 14
     Layout.minimumHeight: Kirigami.Units.gridUnit * 11
     Layout.preferredWidth: Kirigami.Units.gridUnit * 18
+    // Grows with the session list: the base height already fits a few rows;
+    // beyond that the popup gets taller until the list hits its cap and scrolls.
     Layout.preferredHeight: Kirigami.Units.gridUnit * 15
+                            + Math.max(0, sessionScroll.Layout.preferredHeight - Kirigami.Units.gridUnit * 3)
 
     // Passed in from main.qml (Task 5/6); child files can't reach the applet root
     property var agg: ({ active_count: 0, sessions: [] })
@@ -54,20 +57,41 @@ Item {
             font.bold: true
         }
 
-        Repeater {
-            model: fullRoot.agg.sessions
-            RowLayout {
-                Layout.fillWidth: true
-                PlasmaComponents.Label {
-                    text: (modelData.cwd || "").split("/").pop() || (modelData.session_id || "").substring(0, 8)
-                }
-                Item { Layout.fillWidth: true }
-                PlasmaComponents.Label {
-                    text: modelData.state + (modelData.tool ? " · " + Labels.toolLabelShort(modelData.tool) : "")
-                          + (modelData.state === "idle" ? "" : "…")
-                    opacity: 0.8
+        QQC2.ScrollView {
+            id: sessionScroll
+            Layout.fillWidth: true
+            Layout.preferredHeight: Math.min(sessionList.implicitHeight, Kirigami.Units.gridUnit * 20)
+            visible: sessionList.implicitHeight > 0
+            clip: true
+            ColumnLayout {
+                id: sessionList
+                width: sessionScroll.availableWidth
+                spacing: Kirigami.Units.smallSpacing
+                Repeater {
+                    model: fullRoot.agg.sessions
+                    RowLayout {
+                        Layout.fillWidth: true
+                        PlasmaComponents.Label {
+                            Layout.fillWidth: true
+                            elide: Text.ElideRight
+                            text: (modelData.cwd || "").split("/").pop() || (modelData.session_id || "").substring(0, 8)
+                        }
+                        PlasmaComponents.Label {
+                            text: modelData.state + (modelData.tool ? " · " + Labels.toolLabelShort(modelData.tool) : "")
+                                  + (modelData.state === "idle" ? "" : "…")
+                            opacity: 0.8
+                        }
+                    }
                 }
             }
+        }
+
+        PlasmaComponents.Label {
+            visible: (fullRoot.agg.hidden_idle_count || 0) > 0
+            text: i18np("+%1 session idle for over 30 min hidden",
+                        "+%1 sessions idle for over 30 min hidden", fullRoot.agg.hidden_idle_count || 0)
+            opacity: 0.6
+            font: Kirigami.Theme.smallFont
         }
 
         PlasmaComponents.Label {
